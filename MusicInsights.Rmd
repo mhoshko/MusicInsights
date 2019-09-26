@@ -1,0 +1,46 @@
+---
+title: "Music Insights"
+author: "Madeline Hoshko"
+date: "September 19, 2019"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+library("tidyverse")
+library("dplyr")
+
+survey <- read.csv("https://raw.githubusercontent.com/introdsci/MusicSurvey/master/music-survey.csv")
+preferences<-read.csv("https://raw.githubusercontent.com/introdsci/MusicSurvey/master/preferences-survey.csv")
+```
+
+First, I update the names of the columns to have a common naming style throughout and to simplify excessively long original column names. I show two possible ways to do so as we are able to use multiple ways since we are changing the names of every column.
+```{r}
+colnames(survey)[1]<-"time_submitted"
+colnames(survey)[2]<-"pseudonym_generator"
+colnames(survey)[3]<-"pseudonym"
+colnames(survey)[4]<-"sex"
+colnames(survey)[5]<-"academic_major"
+colnames(survey)[6]<-"academic_level"
+colnames(survey)[7]<-"year_born"
+colnames(survey)[8]<-"instrument_list"
+colnames(survey)[9]<-"favorite_song_artist"
+colnames(survey)[10]<-"favorite_song"
+colnames(survey)[11]<-"favorite_song_link"
+
+colnames(survey) <- c("time_submitted", "pseudonym generator", "pseudonym", "sex", "academic_major","academic_level", "year_born", "instrument_list", "favorite_song_artist", "favorite_song", "favorite_song_link")
+
+colnames(survey)
+
+#colnames(preferences)[1] <- "time submitted"
+#colnames(preferences)[2] <- "pseudonym"
+```
+
+
+Creates a person table to include information from survery of each student. Then creates a song table to include information on each song from the survey.
+```{r}
+Person <- tibble(time_submitted=survey$time_submitted, pseudonym_generator=survey$pseudonym_generator, pseudonym=survey$pseudonym, sex=survey$sex, academic_major=survey$academic_major, academic_level=survey$academic_level, year_born=survey$year_born)
+
+Favorite_Song <- tibble(pseudonym=survey$pseudonym, song=survey$favorite_song, artist=survey$favorite_song_artist, song_link=survey$favorite_song_link)
+```
