@@ -10,9 +10,10 @@ output:
 ```{r setup, include=FALSE}
 library("tidyverse")
 library("dplyr")
+library("readr")
 
 survey <- read.csv("https://raw.githubusercontent.com/introdsci/MusicSurvey/master/music-survey.csv")
-#preferences<-read.csv("https://raw.githubusercontent.com/introdsci/MusicSurvey/master/preferences-survey.csv")
+preferences<-read.csv("https://raw.githubusercontent.com/introdsci/MusicSurvey/master/preferences-survey.csv")
 ```
 
 First, I update the names of the columns to have a common naming style throughout and to simplify excessively long original column names. I show two possible ways to do so as we are able to use multiple ways since we are changing the names of every column.
@@ -33,14 +34,34 @@ colnames(survey) <- c("time_submitted", "pseudonym_generator", "pseudonym", "sex
 
 colnames(survey)
 
-#colnames(preferences)[1] <- "time submitted"
-#colnames(preferences)[2] <- "pseudonym"
+colnames(preferences)[1] <- "time submitted"
+colnames(preferences)[2] <- "pseudonym"
+
 ```
 
 
-Creates a person table to include information from survery of each student. Then creates a song table to include information on each song from the survey.
+Creates a person table to include information from survery of each student. Then creates a song table to include information on each song from the survey. Then does the same with a ratings table where I use gather to reorganize the data to no longer be wide. 
 ```{r}
 Person <- tibble(time_submitted=survey$time_submitted, pseudonym_generator=survey$pseudonym_generator, pseudonym=survey$pseudonym, sex=survey$sex, academic_major=survey$academic_major, academic_level=survey$academic_level, year_born=survey$year_born)
 
+Person$academic_level <- as.factor(Person$academic_level)
+Person$sex <- as.factor(Person$sex)
+Person$academic_major <- as.factor(Person$academic_major)
+levels(Person$academic_major)[levels(Person$academic_major)=="Computer information systems"] <- "Computer Information Systems"
+
+
+
+
 Favorite_Song <- tibble(pseudonym=survey$pseudonym, song=survey$favorite_song, artist=survey$favorite_song_artist, song_link=survey$favorite_song_link)
+
+
+
+ preferences$`time submitted` <- NULL
+  Rating <- gather(preferences, artist_song, rating, "X40.crew.Not.Enough":"Wheezer.Buddy.Holly")
+  Ratings <- tibble(pseudonym=Rating$pseudonym, artist_song=Rating$artist_song, rating=Rating$rating)
+Ratings$artist_song <- gsub('.', ' ', Ratings$artist_song)
+
+
+
+#survey$time_submitted <- as.POSIXlt(parse_datetime(survey$time_submitted), format="%m%d%y")
 ```

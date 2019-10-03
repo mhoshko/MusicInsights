@@ -214,12 +214,31 @@ colnames(survey)</code></pre>
 ##  [4] &quot;sex&quot;                  &quot;academic_major&quot;       &quot;academic_level&quot;      
 ##  [7] &quot;year_born&quot;            &quot;instrument_list&quot;      &quot;favorite_song_artist&quot;
 ## [10] &quot;favorite_song&quot;        &quot;favorite_song_link&quot;</code></pre>
-<pre class="r"><code>#colnames(preferences)[1] &lt;- &quot;time submitted&quot;
-#colnames(preferences)[2] &lt;- &quot;pseudonym&quot;</code></pre>
-<p>Creates a person table to include information from survery of each student. Then creates a song table to include information on each song from the survey.</p>
+<pre class="r"><code>colnames(preferences)[1] &lt;- &quot;time submitted&quot;
+colnames(preferences)[2] &lt;- &quot;pseudonym&quot;</code></pre>
+<p>Creates a person table to include information from survery of each student. Then creates a song table to include information on each song from the survey. Then does the same with a ratings table where I use gather to reorganize the data to no longer be wide.</p>
 <pre class="r"><code>Person &lt;- tibble(time_submitted=survey$time_submitted, pseudonym_generator=survey$pseudonym_generator, pseudonym=survey$pseudonym, sex=survey$sex, academic_major=survey$academic_major, academic_level=survey$academic_level, year_born=survey$year_born)
 
-Favorite_Song &lt;- tibble(pseudonym=survey$pseudonym, song=survey$favorite_song, artist=survey$favorite_song_artist, song_link=survey$favorite_song_link)</code></pre>
+Person$academic_level &lt;- as.factor(Person$academic_level)
+Person$sex &lt;- as.factor(Person$sex)
+Person$academic_major &lt;- as.factor(Person$academic_major)
+levels(Person$academic_major)[levels(Person$academic_major)==&quot;Computer information systems&quot;] &lt;- &quot;Computer Information Systems&quot;
+
+
+
+
+Favorite_Song &lt;- tibble(pseudonym=survey$pseudonym, song=survey$favorite_song, artist=survey$favorite_song_artist, song_link=survey$favorite_song_link)
+
+
+
+ preferences$`time submitted` &lt;- NULL
+  Rating &lt;- gather(preferences, artist_song, rating, &quot;X40.crew.Not.Enough&quot;:&quot;Wheezer.Buddy.Holly&quot;)
+  Ratings &lt;- tibble(pseudonym=Rating$pseudonym, artist_song=Rating$artist_song, rating=Rating$rating)
+Ratings$artist_song &lt;- gsub('.', ' ', Ratings$artist_song)
+
+
+
+#survey$time_submitted &lt;- as.POSIXlt(parse_datetime(survey$time_submitted), format=&quot;%m%d%y&quot;)</code></pre>
 
 
 
