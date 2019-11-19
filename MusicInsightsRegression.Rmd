@@ -1,0 +1,71 @@
+---
+title: "MusicInsightsRegression"
+author: "Madeline Hoshko"
+date: "November 18, 2019"
+output: html_document
+---
+
+```{r echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, results='hide'}
+pkgs = c("stringr", "dplyr", "tidyverse", "readr", "ggplot2", "caret", "knitr")
+for (pkg in pkgs){
+  if (!require(pkg, character.only = T)){
+    install.packages(pkg)
+    library(pkg)
+  }
+}
+purl("MusicInsights.Rmd", output = "part1.r")
+source("part1.r")
+```
+
+Creates a new table to include the number of instruments known. Separates the data to set all blank values to 0 talents and sum up the number of columns for each pseudonym for those with talents to calculate the total. I then create a new dataframe that combines the Person tibble with our new num_talents to append the new data to our previous data.
+```{r}
+print(talents)
+talents$pseudonym <- as.factor(talents$pseudonym)
+
+zero_talents <- talents %>%
+  filter(instruments=="")
+zero_talents$instruments <- 0
+colnames(zero_talents)[2] <- "no_talents"
+
+talents2 <- talents %>%
+  filter(instruments!="") %>%
+  group_by(pseudonym) %>%
+  summarise(no_talents=length(pseudonym))
+
+num_talents <- rbind(talents2, zero_talents)
+
+new <- merge(Person, num_talents, by="pseudonym")
+new$sex <- as.factor(new$sex)
+```
+By beginning with a model that uses each column, we see there aren't any strong relationships between attributes to predict the number of talents a person has. Gender and academic major have the lowest Pr values which means they have the highest chance of having a strong relationship to predict number of talents. 
+
+```{r}
+set.seed(385)
+sample_selection <- new$no_talents %>%
+  createDataPartition(p=0.75, list = FALSE)
+train <- new[sample_selection, ]
+test <- new[-sample_selection, ]
+train_model1 <- lm(no_talents ~ academic_level + sex + academic_major + year_born, data=new)
+summary(train_model1)
+
+```
+
+Given academic major has the strongest relationship to predict the number of talents, I now analyze the set with only these attributes and get the following. 
+```{r}
+train_model2 <- lm(no_talents ~ academic_major, data=new)
+summary(train_model2)
+```
+
+We can now see that if we view the predictions from the first model (with all attributes) and the second model (with only major as a predictor) that the values come closer to the actual values in our test data. Given no relationships are strong enough to even somewhat derive the number of talents from the gender and major, there will be a possibility for values within the first prediction that are closer to the test values than those in the second.
+
+```{r}
+(prediction1 <- train_model1 %>% predict(test))
+(prediction2 <- train_model2 %>% predict(test))
+test$no_talents
+```
+
+To summarize my conlclusion, I provide an R^2 value. This represents the percentage of times the model would be able to successfully predict the number of talents.
+```{r}
+R2(prediction1, test$no_talents)
+R2(prediction2, test$no_talents)
+```

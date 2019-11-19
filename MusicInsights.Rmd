@@ -8,9 +8,14 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-library("tidyverse")
-library("dplyr")
-library("readr")
+include <- function(library_name){
+  if( !(library_name %in% installed.packages()) )
+    install.packages(library_name) 
+  library(library_name, character.only=TRUE)
+}
+include("tidyverse")
+include("knitr")
+
 
 survey <- read.csv("https://raw.githubusercontent.com/introdsci/MusicSurvey/master/music-survey.csv")
 preferences<-read.csv("https://raw.githubusercontent.com/introdsci/MusicSurvey/master/preferences-survey.csv")
@@ -26,42 +31,83 @@ colnames(survey)[5]<-"academic_major"
 colnames(survey)[6]<-"academic_level"
 colnames(survey)[7]<-"year_born"
 colnames(survey)[8]<-"instrument_list"
-colnames(survey)[9]<-"favorite_song_artist"
+colnames(survey)[9]<-"artist"
 colnames(survey)[10]<-"favorite_song"
 colnames(survey)[11]<-"favorite_song_link"
 
-colnames(survey) <- c("time_submitted", "pseudonym_generator", "pseudonym", "sex", "academic_major","academic_level", "year_born", "instrument_list", "favorite_song_artist", "favorite_song", "favorite_song_link")
+colnames(survey) <- c("time_submitted", "pseudonym_generator", "pseudonym", "sex", "academic_major","academic_level", "year_born", "instrument_list", "artist", "favorite_song", "favorite_song_link")
 
-colnames(survey)
 
-colnames(preferences)[1] <- "time submitted"
+colnames(preferences)[1] <- "time_submitted"
 colnames(preferences)[2] <- "pseudonym"
 
+
 ```
-
-
 Creates a person table to include information from survery of each student. Then creates a song table to include information on each song from the survey. Then does the same with a ratings table where I use gather to reorganize the data to no longer be wide. 
+Person
 ```{r}
-Person <- tibble(time_submitted=survey$time_submitted, pseudonym_generator=survey$pseudonym_generator, pseudonym=survey$pseudonym, sex=survey$sex, academic_major=survey$academic_major, academic_level=survey$academic_level, year_born=survey$year_born)
+Person <- tibble(time_submitted=survey$time_submitted, pseudonym_generator=survey$pseudonym_generator,
+                pseudonym=survey$pseudonym, sex=survey$sex, academic_major=survey$academic_major,
+                academic_level=survey$academic_level, year_born=survey$year_born)
 
 Person$academic_level <- as.factor(Person$academic_level)
 Person$sex <- as.factor(Person$sex)
 Person$academic_major <- as.factor(Person$academic_major)
-levels(Person$academic_major)[levels(Person$academic_major)=="Computer information systems"] <- "Computer Information Systems"
+levels(Person$academic_major)[levels(Person$academic_major)=="Computer information systems"] <- 
+  "Computer Information Systems"
+
+```
+
+Favorite Song 
+```{r}
+favorite_song <- tibble(pseudonym=survey$pseudonym, title=survey$favorite_song,
+                        artist=survey$artist, song_link=survey$favorite_song_link)
 
 
+```
+
+Ratings
+```{r}
+Rating <- gather(preferences, artist_song, rating, "X40.crew.Not.Enough":"Wheezer.Buddy.Holly")
+
+Ratings <- tibble(pseudonym=Rating$pseudonym, artist_song=Rating$artist_song, rating=Rating$rating)
+Ratings$artist_song <- str_replace_all(Ratings$artist_song, 
+                                       pattern = "\t", 
+                                       replacement = " ")
+
+```
+
+Talents
+```{r}
+talents <- tibble(pseudonym = survey$pseudonym, instruments = survey$instrument_list)
+talents <- separate_rows(talents,-pseudonym, sep=",")
+talents$instruments <- talents$instruments %>% 
+                        trimws() %>% 
+                        tolower() %>%
+                        str_replace_all(pattern=".*piano.*","piano") %>%
+                        str_replace_all(pattern=".*ukulele.*","ukulele") %>%
+                        as.factor()
+
+```
+
+Favorite Ratings
+```{r}
+# Ratings$pseudonym <- as.factor(Ratings$pseudonym)
+# favorite_song$pseudonym <- as.factor(favorite_song$pseudonym)
+# favorite_ratings <- Ratings %>% 
+#                     left_join(favorite_song, by="pseudonym") %>%
+#                     filter(artist_song==paste(artist,title)) %>%
+#                     select(pseudonym,artist_song,rating)
+
+```
+
+Plots
+```{r}
 
 
-Favorite_Song <- tibble(pseudonym=survey$pseudonym, song=survey$favorite_song, artist=survey$favorite_song_artist, song_link=survey$favorite_song_link)
+ggplot(Ratings, aes(x=rating)) + geom_histogram(binwidth = 1)
+ggplot(Ratings, aes(x=rating, y=pseudonym))+geom_boxplot()+theme_light()
 
+ggplot(Ratings, aes(x=pseudonym, y=rating))+geom_bar( stat = "summary", fun.y = "mean")
 
-
- preferences$`time submitted` <- NULL
-  Rating <- gather(preferences, artist_song, rating, "X40.crew.Not.Enough":"Wheezer.Buddy.Holly")
-  Ratings <- tibble(pseudonym=Rating$pseudonym, artist_song=Rating$artist_song, rating=Rating$rating)
-Ratings$artist_song <- gsub('.', ' ', Ratings$artist_song)
-
-
-
-#survey$time_submitted <- as.POSIXlt(parse_datetime(survey$time_submitted), format="%m%d%y")
 ```
