@@ -1,0 +1,12 @@
+---
+title: "Index"
+author: "Madeline Hoshko"
+date: "November 19, 2019"
+output: html_document
+---
+
+Link to my regression document: [here](./MusicInsightsRegression.html)
+
+
+
+
